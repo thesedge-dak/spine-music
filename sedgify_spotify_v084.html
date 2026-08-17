@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#050505">
+<title>SEDGIFY — Spotify v0.8.4</title>
+<style>
+:root{
+  --bg:#050505; --panel:#0a0a0a; --line:#242424; --muted:#8c8c8c;
+  --spotify:#1ed760; --accent:#ff4a24; --shelf:#5a3517;
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:#f4f4f4;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif}
+body{display:flex;flex-direction:column;user-select:none;-webkit-user-select:none;overscroll-behavior:none}
+button,select{font:inherit}
+
+/* HEADER */
+header{height:72px;flex:0 0 72px;display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;padding:0 26px;border-bottom:1px solid #171717;background:#050505}
+.brand{font-size:28px;font-weight:850;letter-spacing:-.04em}
+.version{font-size:10px;color:var(--accent);margin-left:8px;letter-spacing:.08em}
+.libraryHead{text-align:center}.libraryHead strong{display:block;font-size:16px;letter-spacing:.16em}.libraryHead span{display:block;margin-top:3px;color:#777;font-size:11px;letter-spacing:.18em}
+.deviceHead{text-align:right;font-size:11px;color:#777;letter-spacing:.12em;text-transform:uppercase}
+.deviceHead strong{display:block;margin-top:4px;font-size:15px;color:#eee;letter-spacing:0;text-transform:none;font-weight:650}
+.deviceHead button{border:0;background:none;color:#888;padding:0 0 0 6px}
+
+/* SHELF */
+.shelfWrap{height:390px;flex:0 0 390px;padding:18px 16px 12px;background:linear-gradient(#15110d,#080706)}
+.shelf{
+  position:relative;height:100%;overflow:hidden;border-radius:22px;
+  border:2px solid #39322c;background:
+  linear-gradient(180deg,rgba(255,197,109,.08),transparent 13%,transparent 82%,rgba(255,157,48,.08)),
+  linear-gradient(180deg,#0c0b0a,#050505);
+  box-shadow:inset 0 0 0 7px #111,inset 0 14px 25px rgba(255,174,67,.08),inset 0 -14px 25px rgba(255,174,67,.08),0 18px 45px rgba(0,0,0,.45);
+  touch-action:none;
+}
+.shelf:before,.shelf:after{content:"";position:absolute;left:18px;right:18px;height:5px;border-radius:8px;background:linear-gradient(90deg,#2b1c0c,#ae7436,#2b1c0c);box-shadow:0 0 15px rgba(255,168,72,.35);z-index:5}
+.shelf:before{top:12px}.shelf:after{bottom:12px}
+.shelfContent{position:absolute;inset:24px 24px 24px;display:grid;grid-template-columns:1fr minmax(300px,390px) 1fr;gap:14px;align-items:end}
+.spineBank{height:100%;display:flex;align-items:flex-end;gap:6px;overflow:hidden;will-change:transform}
+.spineBank.left{justify-content:flex-end}.spineBank.right{justify-content:flex-start}
+.spine{
+  height:92%;width:52px;flex:0 0 52px;border-radius:3px 3px 1px 1px;position:relative;overflow:hidden;
+  border:1px solid rgba(255,255,255,.14);background:#1d1d1d center/cover;
+  box-shadow:0 7px 15px rgba(0,0,0,.5);
+}
+.spine:before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,255,255,.14),transparent 17%,transparent 80%,rgba(0,0,0,.45)),linear-gradient(180deg,rgba(0,0,0,.05),rgba(0,0,0,.7))}
+.spineTitle{position:absolute;z-index:2;left:50%;top:12px;transform:translateX(-50%);writing-mode:vertical-rl;white-space:nowrap;max-height:76%;overflow:hidden;text-shadow:0 1px 4px #000;font-size:10px;font-weight:800;letter-spacing:.05em}
+.spineYear{position:absolute;z-index:2;bottom:8px;left:50%;transform:translateX(-50%);font-size:9px;text-shadow:0 1px 4px #000;color:#ddd}
+.selectedAlbum{
+  height:100%;display:flex;align-items:center;justify-content:center;position:relative
+}
+.selectedCover{
+  height:100%;max-height:330px;will-change:transform;aspect-ratio:1;background:#111 center/cover;border:2px solid rgba(255,255,255,.7);
+  box-shadow:0 8px 30px rgba(0,0,0,.65),0 0 0 5px #161616,0 0 28px rgba(255,174,67,.13);
+  position:relative;
+}
+.selectedCover .coverPlay{
+  position:absolute;right:14px;bottom:14px;width:48px;height:48px;border-radius:50%;border:0;background:rgba(20,20,20,.72);color:white;font-size:18px;backdrop-filter:blur(8px)
+}
+.shelfHint{position:absolute;top:15px;left:50%;transform:translateX(-50%);font-size:9px;color:#625b55;letter-spacing:.18em;z-index:8}
+
+/* LOWER AREA */
+.lower{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:34px;padding:18px 30px 20px;background:linear-gradient(#090909,#050505)}
+.albumInfo{display:grid;grid-template-columns:145px 1fr;gap:22px;align-items:center;min-width:0}
+.albumMini{width:145px;aspect-ratio:1;background:#111 center/cover;border:1px solid #3a3a3a}
+.albumMeta{min-width:0}.eyebrow{font-size:10px;letter-spacing:.2em;color:#8a8a8a;text-transform:uppercase;margin-bottom:8px}
+.albumMeta h1{font-size:36px;line-height:1;margin:0 0 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.albumSub{font-size:13px;color:#7b7b7b;margin-bottom:18px}
+.albumActions{display:flex;gap:10px;flex-wrap:wrap}.primary,.secondary{height:44px;border-radius:999px;padding:0 18px;font-size:13px}
+.primary{border:0;background:var(--accent);color:white;font-weight:750}.secondary{border:1px solid #363636;background:#111;color:#ddd}
+
+/* NOW PLAYING */
+.nowPlaying{border-left:1px solid #202020;padding-left:28px;display:flex;flex-direction:column;justify-content:center;min-width:0}
+.nowTitle{font-size:10px;letter-spacing:.2em;color:#7d7d7d;margin-bottom:11px}
+.nowRow{display:flex;gap:13px;align-items:center}.nowArt{width:58px;height:58px;flex:0 0 58px;background:#111 center/cover;border:1px solid #313131}
+.nowText{min-width:0}.trackName{font-size:17px;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.trackArtist{font-size:13px;color:#7c7c7c;margin-top:4px}
+.progressRow{display:flex;align-items:center;gap:9px;margin-top:14px}.progress{height:4px;flex:1;background:#292929;border-radius:4px;overflow:hidden}.progress>div{height:100%;width:0;background:var(--accent)}
+.time{font-size:10px;color:#666;font-variant-numeric:tabular-nums}
+.transport{display:flex;align-items:center;justify-content:center;gap:28px;margin-top:14px}.transport button{border:0;background:none;color:#ddd;font-size:23px}.transport .pause{width:52px;height:52px;border-radius:50%;border:1px solid var(--accent);font-size:20px}
+.feedback{height:16px;margin-top:6px;text-align:center;font-size:11px;color:#777}.feedback.ok{color:#8fe6aa}.feedback.error{color:#ff9f9f}
+
+/* LOGIN + MODAL */
+#login{margin:auto;text-align:center;max-width:520px;padding:30px}#login h1{font-size:42px;margin:0 0 14px}.loginCopy{color:#888;line-height:1.55;margin-bottom:24px}.connect{height:48px;border:0;border-radius:999px;padding:0 23px;background:var(--spotify);color:#04190b;font-weight:800}.loginNote{font-size:12px;color:#777;margin-top:15px}.error{color:#ff9f9f!important}
+.speakerPanel{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.78);display:grid;place-items:center;padding:20px}.speakerBox{width:min(520px,90vw);background:#111;border:1px solid #333;border-radius:18px;padding:22px}.speakerTitle{font-size:20px;font-weight:750;margin-bottom:15px}.speakerRow{display:flex;gap:10px}.speakerRow select{flex:1;min-width:0;height:44px;border:1px solid #444;border-radius:10px;background:#191919;color:#eee;padding:0 12px}.speakerRow button{height:44px;border-radius:10px;border:1px solid #444;background:#1b1b1b;color:#eee;padding:0 14px}.speakerMsg{font-size:12px;color:#777;margin-top:11px;line-height:1.45}.speakerMsg.ok{color:#8fe6aa}.speakerMsg.error{color:#ff9f9f}.closeSpeaker{margin-top:15px;width:100%;height:44px;border:0;border-radius:10px;background:#eee;color:#111;font-weight:700}
+.hidden{display:none!important}
+
+@media(max-height:760px){
+  header{height:62px;flex-basis:62px}.shelfWrap{height:330px;flex-basis:330px}.shelfContent{grid-template-columns:1fr minmax(260px,330px) 1fr}.selectedCover{max-height:280px}.lower{padding-top:12px;padding-bottom:10px}.albumInfo{grid-template-columns:115px 1fr}.albumMini{width:115px}.albumMeta h1{font-size:30px}.spine{width:46px;flex-basis:46px}
+}
+@media(max-width:900px){
+  header{padding:0 16px}.brand{font-size:23px}.shelfWrap{padding-left:8px;padding-right:8px}.shelfContent{left:12px;right:12px;grid-template-columns:1fr minmax(250px,340px) 1fr}.spine{width:44px;flex-basis:44px}.lower{gap:20px;padding-left:20px;padding-right:20px}.albumInfo{grid-template-columns:120px 1fr}.albumMini{width:120px}.albumMeta h1{font-size:29px}.nowPlaying{padding-left:20px}
+}
+</style>
+</head>
+<body>
+
+<header id="appHeader" class="hidden">
+  <div><span class="brand">SEDGIFY</span><span class="version">v0.8.4</span></div>
+  <div class="libraryHead"><strong>MY MUSIC</strong><span id="libraryCount">0 ALBUMS</span></div>
+  <div class="deviceHead">PLAYING ON <strong><span id="deviceName">Choose speaker</span><button id="changeSpeaker">⌄</button></strong></div>
+</header>
+
+<section id="app" class="hidden">
+  <div class="shelfWrap">
+    <div class="shelf" id="shelf">
+      <div class="shelfHint">SWIPE TO BROWSE</div>
+      <div class="shelfContent">
+        <div id="leftBank" class="spineBank left"></div>
+        <div class="selectedAlbum">
+          <div id="selectedCover" class="selectedCover"><button id="coverPlay" class="coverPlay">▶</button></div>
+        </div>
+        <div id="rightBank" class="spineBank right"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="lower">
+    <div class="albumInfo">
+      <div id="albumMini" class="albumMini"></div>
+      <div class="albumMeta">
+        <div id="artist" class="eyebrow"></div>
+        <h1 id="album"></h1>
+        <div id="albumSub" class="albumSub"></div>
+        <div class="albumActions">
+          <button id="playAlbum" class="primary">▶ Play album</button>
+          <button id="random" class="secondary">Surprise me</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="nowPlaying">
+      <div class="nowTitle">NOW PLAYING</div>
+      <div class="nowRow">
+        <div id="nowArt" class="nowArt"></div>
+        <div class="nowText"><div id="nowTrack" class="trackName">Nothing playing</div><div id="nowArtist" class="trackArtist">—</div></div>
+      </div>
+      <div class="progressRow"><span id="elapsed" class="time">0:00</span><div class="progress"><div id="progressBar"></div></div><span id="duration" class="time">0:00</span></div>
+      <div class="transport">
+        <button id="previousTrack">|◀</button><button id="togglePlay" class="pause">▶</button><button id="nextTrack">▶|</button>
+      </div>
+      <div id="feedback" class="feedback"></div>
+    </div>
+  </div>
+</section>
+
+<main id="login">
+  <h1>SEDGIFY</h1>
+  <div class="loginCopy">Connect Spotify to load your saved albums and control playback on your Spotify Connect speaker.</div>
+  <button class="connect" id="connectBtn">Connect Spotify</button>
+  <div class="loginNote" id="loginNote"></div>
+</main>
+
+<div id="speakerPanel" class="speakerPanel hidden">
+  <div class="speakerBox">
+    <div class="speakerTitle">Choose speaker</div>
+    <div class="speakerRow"><select id="deviceSelect"><option>Loading…</option></select><button id="refreshDevices">Refresh</button></div>
+    <div class="speakerMsg" id="speakerMsg">Looking for Spotify Connect devices…</div>
+    <button class="closeSpeaker" id="closeSpeaker">Use this speaker</button>
+  </div>
+</div>
+
+<script>
+const CLIENT_ID="df124d32c7434a7b942bdc31d6f73b83";
+const REDIRECT_URI="https://thesedge-dak.github.io/spine-music/";
+const SCOPES="user-library-read user-read-playback-state user-modify-playback-state";
+const SCOPE_VERSION="v07-playback";
+const AUTH="https://accounts.spotify.com/authorize",TOKEN="https://accounts.spotify.com/api/token",API="https://api.spotify.com/v1";
+const $=id=>document.getElementById(id);
+
+let albums=[],devices=[],index=0,isPlaying=false;
+let shelfDragging=false,shelfStartX=0,shelfLastX=0,shelfVelocity=0,shelfMoved=false;
+let shelfOffset=0,spineStep=58;
+
+function feedback(msg="",kind=""){const e=$("feedback");e.textContent=msg;e.className="feedback"+(kind?" "+kind:"")}
+function b64url(bytes){return btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}
+function randomVerifier(len=64){const chars="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~",a=new Uint8Array(len);crypto.getRandomValues(a);return Array.from(a,b=>chars[b%chars.length]).join("")}
+async function challenge(v){return b64url(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(v)))}
+
+async function connect(){
+  const verifier=randomVerifier(),state=randomVerifier(32);
+  sessionStorage.setItem("pkce",verifier);sessionStorage.setItem("state",state);
+  const p=new URLSearchParams({client_id:CLIENT_ID,response_type:"code",redirect_uri:REDIRECT_URI,scope:SCOPES,code_challenge_method:"S256",code_challenge:await challenge(verifier),state,show_dialog:"true"});
+  location.href=AUTH+"?"+p;
+}
+function saveTokens(t){if(t.access_token)localStorage.setItem("sat",t.access_token);if(t.refresh_token)localStorage.setItem("srt",t.refresh_token);if(t.expires_in)localStorage.setItem("sexp",Date.now()+t.expires_in*1000-60000)}
+function clearTokens(){["sat","srt","sexp","scopev"].forEach(k=>localStorage.removeItem(k))}
+async function exchange(code){
+  const body=new URLSearchParams({client_id:CLIENT_ID,grant_type:"authorization_code",code,redirect_uri:REDIRECT_URI,code_verifier:sessionStorage.getItem("pkce")||""});
+  const r=await fetch(TOKEN,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body});
+  if(!r.ok)throw Error("Spotify login failed ("+r.status+")");
+  saveTokens(await r.json());localStorage.setItem("scopev",SCOPE_VERSION);
+}
+async function refresh(){
+  const rt=localStorage.getItem("srt");if(!rt)return null;
+  const body=new URLSearchParams({client_id:CLIENT_ID,grant_type:"refresh_token",refresh_token:rt});
+  const r=await fetch(TOKEN,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body});
+  if(!r.ok){clearTokens();return null}
+  const t=await r.json();saveTokens(t);return t.access_token;
+}
+async function getToken(){const t=localStorage.getItem("sat"),e=+localStorage.getItem("sexp");return t&&Date.now()<e?t:await refresh()}
+async function api(url,opt={}){
+  let token=await getToken();if(!token)throw Error("Spotify connection expired.");
+  let headers={...(opt.headers||{}),Authorization:"Bearer "+token};if(opt.body)headers["Content-Type"]="application/json";
+  let r=await fetch(url,{...opt,headers});
+  if(r.status===401){token=await refresh();if(!token)throw Error("Spotify connection expired.");headers.Authorization="Bearer "+token;r=await fetch(url,{...opt,headers})}
+  if(r.status===204)return null;
+  if(!r.ok){let d="";try{d=(await r.json())?.error?.message||""}catch{}throw Error("Spotify "+r.status+(d?": "+d:""))}
+  return r.json();
+}
+
+async function loadAlbums(){
+  let out=[],url=API+"/me/albums?limit=50";
+  while(url){
+    const d=await api(url);
+    for(const it of d.items||[]){
+      const a=it.album;if(!a)continue;
+      out.push({
+        id:a.id,title:a.name,artist:(a.artists||[]).map(v=>v.name).join(", "),
+        year:(a.release_date||"").slice(0,4),image:a.images?.[0]?.url||"",
+        uri:a.uri,tracks:a.total_tracks||"",savedAt:it.added_at||""
+      });
+    }
+    url=d.next;
+  }
+  const seen=new Set();albums=out.filter(a=>!seen.has(a.id)&&seen.add(a.id));
+}
+
+async function loadDevices(){
+  try{
+    const d=await api(API+"/me/player/devices");devices=(d.devices||[]).filter(v=>v.id);
+    $("deviceSelect").innerHTML="";
+    if(!devices.length){
+      $("deviceSelect").innerHTML="<option>No devices found</option>";
+      $("speakerMsg").className="speakerMsg error";
+      $("speakerMsg").textContent="No devices found. Start Spotify on the Echo, then refresh.";
+      return;
+    }
+    devices.sort((a,b)=>(b.is_active?1:0)-(a.is_active?1:0)||a.name.localeCompare(b.name));
+    const saved=localStorage.getItem("speakerId");
+    devices.forEach(v=>{const o=document.createElement("option");o.value=v.id;o.textContent=v.name+" · "+v.type+(v.is_active?" · active":"");$("deviceSelect").appendChild(o)});
+    const chosen=devices.find(v=>v.id===saved)||devices.find(v=>v.is_active)||devices[0];
+    $("deviceSelect").value=chosen.id;saveSpeaker();
+    $("speakerMsg").className="speakerMsg ok";$("speakerMsg").textContent="Selected: "+chosen.name;
+  }catch(e){$("speakerMsg").className="speakerMsg error";$("speakerMsg").textContent=e.message}
+}
+function saveSpeaker(){
+  const id=$("deviceSelect").value;if(!id)return;
+  localStorage.setItem("speakerId",id);
+  const d=devices.find(v=>v.id===id);$("deviceName").textContent=d?d.name:"Selected speaker";
+}
+function selectedDevice(){return devices.find(v=>v.id===$("deviceSelect").value)||devices.find(v=>v.id===localStorage.getItem("speakerId"))}
+
+function spineElement(a,i){
+  const s=document.createElement("div");s.className="spine";s.dataset.i=i;
+  if(a.image)s.style.backgroundImage='url("'+a.image+'")';
+  s.innerHTML='<div class="spineTitle">'+escapeHtml(a.title)+'</div><div class="spineYear">'+escapeHtml(a.year)+'</div>';
+  s.onclick=()=>selectAlbum(i);
+  return s;
+}
+function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+
+function renderShelf(){
+  if(!albums.length)return;
+  const left=$("leftBank"),right=$("rightBank");left.innerHTML="";right.innerHTML="";
+  const leftStart=Math.max(0,index-7);
+  for(let i=leftStart;i<index;i++)left.appendChild(spineElement(albums[i],i));
+  for(let i=index+1;i<=Math.min(albums.length-1,index+7);i++)right.appendChild(spineElement(albums[i],i));
+
+  const a=albums[index];
+  $("selectedCover").style.backgroundImage=a.image?'url("'+a.image+'")':"";
+  $("albumMini").style.backgroundImage=a.image?'url("'+a.image+'")':"";
+  $("artist").textContent=a.artist;
+  $("album").textContent=a.title;
+  $("albumSub").textContent=[a.year,a.tracks?a.tracks+" tracks":""].filter(Boolean).join("  •  ");
+}
+function selectAlbum(i){
+  index=Math.max(0,Math.min(albums.length-1,i));renderShelf();
+}
+function browse(delta){selectAlbum(index+delta)}
+
+
+function applyShelfDrag(px){
+  $("leftBank").style.transform="translate3d("+px+"px,0,0)";
+  $("rightBank").style.transform="translate3d("+px+"px,0,0)";
+  $("selectedCover").style.transform="translate3d("+px+"px,0,0) scale("+(1-Math.min(.08,Math.abs(px)/900))+")";
+}
+function resetShelfDrag(animated=true){
+  const transition=animated?"transform .28s cubic-bezier(.2,.8,.2,1)":"none";
+  $("leftBank").style.transition=transition;
+  $("rightBank").style.transition=transition;
+  $("selectedCover").style.transition=transition;
+  applyShelfDrag(0);
+  setTimeout(()=>{
+    $("leftBank").style.transition="";
+    $("rightBank").style.transition="";
+    $("selectedCover").style.transition="";
+  },320);
+}
+$("shelf").addEventListener("touchstart",e=>{
+  if(e.touches.length!==1)return;
+  shelfDragging=true;shelfMoved=false;shelfStartX=e.touches[0].clientX;shelfLastX=shelfStartX;shelfVelocity=0;
+  $("leftBank").style.transition="none";$("rightBank").style.transition="none";$("selectedCover").style.transition="none";
+},{passive:true});
+$("shelf").addEventListener("touchmove",e=>{
+  if(!shelfDragging||e.touches.length!==1)return;
+  const x=e.touches[0].clientX;
+  const dx=x-shelfStartX;
+  shelfVelocity=x-shelfLastX;shelfLastX=x;
+  if(Math.abs(dx)>5)shelfMoved=true;
+  applyShelfDrag(dx);
+},{passive:true});
+$("shelf").addEventListener("touchend",e=>{
+  if(!shelfDragging)return;
+  shelfDragging=false;
+  const x=e.changedTouches?.[0]?.clientX ?? shelfLastX;
+  const dx=x-shelfStartX;
+  const projected=dx+shelfVelocity*7;
+  if(Math.abs(projected)>36){
+    browse(projected<0?1:-1);
+    resetShelfDrag(false);
+  }else{
+    resetShelfDrag(true);
+  }
+},{passive:true});
+
+
+
+$("shelf").addEventListener("mousedown",e=>{
+  shelfDragging=true;shelfMoved=false;shelfStartX=e.clientX;shelfLastX=e.clientX;shelfVelocity=0;
+  $("leftBank").style.transition="none";$("rightBank").style.transition="none";$("selectedCover").style.transition="none";
+});
+window.addEventListener("mousemove",e=>{
+  if(!shelfDragging)return;
+  const dx=e.clientX-shelfStartX;shelfVelocity=e.clientX-shelfLastX;shelfLastX=e.clientX;
+  if(Math.abs(dx)>5)shelfMoved=true;applyShelfDrag(dx);
+});
+window.addEventListener("mouseup",e=>{
+  if(!shelfDragging)return;shelfDragging=false;
+  const dx=e.clientX-shelfStartX,projected=dx+shelfVelocity*7;
+  if(Math.abs(projected)>36){browse(projected<0?1:-1);resetShelfDrag(false)}else resetShelfDrag(true);
+});
+
+async function playAlbum(){
+  const d=selectedDevice();if(!d){openSpeaker();return}
+  try{
+    feedback("Starting album…");
+    await api(API+"/me/player/play?device_id="+encodeURIComponent(d.id),{method:"PUT",body:JSON.stringify({context_uri:albums[index].uri})});
+    feedback("Playing on "+d.name,"ok");
+    setTimeout(updatePlayback,650);
+  }catch(e){feedback(e.message,"error")}
+}
+async function togglePlay(){
+  try{await api(API+"/me/player/"+(isPlaying?"pause":"play"),{method:"PUT"});setTimeout(updatePlayback,400)}
+  catch(e){feedback(e.message,"error")}
+}
+async function skip(dir){
+  try{await api(API+"/me/player/"+(dir==="next"?"next":"previous"),{method:"POST"})}
+  catch(e){console.warn(e)}
+  setTimeout(updatePlayback,500);
+}
+function fmt(ms){const s=Math.max(0,Math.floor((ms||0)/1000));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")}
+async function updatePlayback(){
+  try{
+    const p=await api(API+"/me/player");
+    if(!p||!p.item){
+      isPlaying=false;$("togglePlay").textContent="▶";$("nowTrack").textContent="Nothing playing";$("nowArtist").textContent="—";
+      $("nowArt").style.backgroundImage="";$("progressBar").style.width="0%";$("elapsed").textContent="0:00";$("duration").textContent="0:00";return;
+    }
+    isPlaying=!!p.is_playing;$("togglePlay").textContent=isPlaying?"❚❚":"▶";
+    $("nowTrack").textContent=p.item.name||"Unknown";$("nowArtist").textContent=(p.item.artists||[]).map(a=>a.name).join(", ");
+    const art=p.item.album?.images?.[1]?.url||p.item.album?.images?.[0]?.url||"";
+    $("nowArt").style.backgroundImage=art?'url("'+art+'")':"";
+    const dur=p.item.duration_ms||1,prog=p.progress_ms||0;
+    $("progressBar").style.width=Math.min(100,prog/dur*100)+"%";$("elapsed").textContent=fmt(prog);$("duration").textContent=fmt(dur);
+    if(p.device?.name){
+      $("deviceName").textContent=p.device.name;
+      const m=devices.find(d=>d.name===p.device.name);
+      if(m){$("deviceSelect").value=m.id;localStorage.setItem("speakerId",m.id)}
+    }
+  }catch(e){console.warn("Playback refresh:",e)}
+}
+
+function openSpeaker(){$("speakerPanel").classList.remove("hidden");loadDevices()}
+function closeSpeaker(){saveSpeaker();$("speakerPanel").classList.add("hidden")}
+
+$("connectBtn").onclick=connect;
+$("playAlbum").onclick=playAlbum;
+$("coverPlay").onclick=e=>{e.stopPropagation();playAlbum()};
+$("togglePlay").onclick=togglePlay;
+$("nextTrack").onclick=()=>skip("next");
+$("previousTrack").onclick=()=>skip("previous");
+$("changeSpeaker").onclick=openSpeaker;
+$("refreshDevices").onclick=loadDevices;
+$("closeSpeaker").onclick=closeSpeaker;
+$("deviceSelect").onchange=saveSpeaker;
+$("random").onclick=()=>{if(albums.length>1){let n=index;while(n===index)n=Math.floor(Math.random()*albums.length);selectAlbum(n)}};
+
+
+function showLogin(msg="",err=false){
+  $("login").classList.remove("hidden");$("appHeader").classList.add("hidden");$("app").classList.add("hidden");
+  if(msg){$("loginNote").textContent=msg;$("loginNote").classList.toggle("error",err)}
+}
+function showApp(){
+  $("login").classList.add("hidden");$("appHeader").classList.remove("hidden");$("app").classList.remove("hidden");
+}
+async function init(){
+  try{
+    const q=new URLSearchParams(location.search);
+    if(q.get("error"))throw Error("Spotify authorization was cancelled.");
+    if(q.get("code")){
+      if(q.get("state")!==sessionStorage.getItem("state"))throw Error("Spotify security check failed.");
+      await exchange(q.get("code"));history.replaceState({},document.title,REDIRECT_URI);
+    }
+    if(localStorage.getItem("scopev")!==SCOPE_VERSION){clearTokens();showLogin("Reconnect Spotify once for playback controls.",false);return}
+    if(!await getToken()){showLogin();return}
+    showApp();
+    await Promise.all([loadAlbums(),loadDevices()]);
+    $("libraryCount").textContent=albums.length+" ALBUMS";
+    renderShelf();
+    await updatePlayback();
+    setInterval(updatePlayback,5000);
+  }catch(e){console.error(e);showLogin(e.message||"Something went wrong.",true)}
+}
+init();
+</script>
+</body>
+</html>
