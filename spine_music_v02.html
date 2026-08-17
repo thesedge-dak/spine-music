@@ -1,0 +1,77 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Spine Music v0.2</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#080808;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body{display:flex;flex-direction:column;user-select:none;-webkit-user-select:none}
+header{height:62px;flex:0 0 62px;padding:0 26px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #222}
+.logo{font-size:17px;font-weight:800;letter-spacing:.22em}.clock{color:#999;font-variant-numeric:tabular-nums}
+.label{height:42px;flex:0 0 42px;padding:14px 26px 0;color:#777;font-size:11px;letter-spacing:.22em;text-transform:uppercase}
+#viewport{height:158px;flex:0 0 158px;position:relative;overflow:hidden;touch-action:none;cursor:grab}
+#viewport.dragging{cursor:grabbing}
+#track{position:absolute;left:0;top:0;height:158px;display:flex;gap:9px;padding:0 26px;will-change:transform}
+.spine{width:78px;height:158px;flex:0 0 78px;border:1px solid #333;border-radius:4px;position:relative;overflow:hidden;transition:transform .2s,border-color .2s}
+.spine.c{background:linear-gradient(145deg,#a52f35,#1d090b)}
+.spine.s{background:linear-gradient(145deg,#426f8d,#091116)}
+.spine.selected{border-color:#eee;transform:translateY(-5px)}
+.vtitle{position:absolute;top:9px;left:50%;transform:translateX(-50%);writing-mode:vertical-rl;white-space:nowrap;font-size:11px;font-weight:800;letter-spacing:.06em}
+.vyear{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-size:9px;color:#bbb}
+main{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:20px}
+.feature{display:flex;align-items:center;gap:34px;width:min(760px,90vw)}
+.cover{width:min(390px,43vw);aspect-ratio:1;display:flex;align-items:center;justify-content:center;text-align:center;border:1px solid #333;box-shadow:0 25px 70px #000;position:relative;overflow:hidden}
+.cover.c{background:linear-gradient(135deg,#b53b3b,#160909)}.cover.s{background:linear-gradient(135deg,#4d7d9d,#081015)}
+.cover:after{content:"";position:absolute;inset:-20%;background:radial-gradient(circle at 30% 25%,#ffffff30,transparent 23%),radial-gradient(circle at 75% 75%,#ffffff12,transparent 35%);transform:rotate(10deg)}
+.cover span{position:relative;z-index:1;padding:20px;font-size:clamp(18px,3vw,35px);font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+.artist{color:#999;font-size:12px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:9px}
+h1{font-size:clamp(28px,4vw,48px);line-height:1;margin:0 0 10px}.meta{color:#777;font-size:14px}.hint{color:#555;font-size:12px;line-height:1.5;margin-top:24px}
+footer{height:66px;flex:0 0 66px;border-top:1px solid #222;display:flex;align-items:center;justify-content:space-between;padding:0 26px;color:#777;font-size:12px}
+footer strong{color:#eee}.buttons{display:flex;gap:8px}.btn{width:38px;height:38px;border:1px solid #444;border-radius:50%;display:grid;place-items:center;background:#111;color:#eee}
+@media(max-width:700px){header{padding:0 16px}.label{padding-left:16px}.feature{gap:18px}.cover{width:45vw}.info{min-width:0}.info h1{font-size:25px}footer{padding:0 16px}}
+</style>
+</head>
+<body>
+<header><div class="logo">MY MUSIC</div><div class="clock" id="clock"></div></header>
+<div class="label" id="label">COURTEENERS</div>
+<div id="viewport"><div id="track"></div></div>
+<main><section class="feature">
+<div class="cover c" id="cover"><span id="coverText">ST. JUDE</span></div>
+<div class="info"><div class="artist" id="artist">Courteeners</div><h1 id="album">St. Jude</h1><div class="meta" id="year">2008</div><div class="hint">Swipe or drag the album shelf.<br>Release to snap to an album.</div></div>
+</section></main>
+<footer><div>DEMO MODE · <strong>Nothing playing yet</strong></div><div class="buttons"><div class="btn">‹</div><div class="btn">▶</div><div class="btn">›</div></div></footer>
+<script>
+const albums=[
+["Courteeners","St. Jude",2008,"c"],["Courteeners","Falcon",2010,"c"],["Courteeners","Anna",2013,"c"],
+["Courteeners","Concrete Love",2014,"c"],["Courteeners","Mapping the Rendezvous",2016,"c"],
+["Courteeners","St. Jude Re:Wired",2018,"c"],["Courteeners","More. Again. Forever.",2020,"c"],["Courteeners","Pink Cactus Café",2024,"c"],
+["Sam Fender","Hypersonic Missiles",2019,"s"],["Sam Fender","Seventeen Going Under",2021,"s"],["Sam Fender","People Watching",2025,"s"]];
+const vp=document.getElementById("viewport"),track=document.getElementById("track");
+const cover=document.getElementById("cover"),coverText=document.getElementById("coverText");
+const artist=document.getElementById("artist"),album=document.getElementById("album"),year=document.getElementById("year"),label=document.getElementById("label");
+albums.forEach((a,i)=>{const e=document.createElement("div");e.className="spine "+a[3];e.dataset.i=i;e.innerHTML='<div class="vtitle">'+a[1]+'</div><div class="vyear">'+a[2]+'</div>';track.appendChild(e)});
+const STEP=87;let index=0,x=26,startX=0,startOffset=0,drag=false,moved=false;
+function maxX(){const w=26+albums.length*78+(albums.length-1)*9+26;return Math.min(26,vp.clientWidth-w)}
+function clamp(v){return Math.max(maxX(),Math.min(26,v))}
+function show(animated){
+ track.style.transition=animated?"transform .28s cubic-bezier(.2,.8,.2,1)":"none";
+ track.style.transform="translate3d("+x+"px,0,0)";
+ document.querySelectorAll(".spine").forEach((e,i)=>e.classList.toggle("selected",i===index));
+ const a=albums[index];artist.textContent=a[0];album.textContent=a[1];year.textContent=a[2];label.textContent=a[0].toUpperCase();cover.className="cover "+a[3];coverText.textContent=a[1];
+}
+function snap(){index=Math.max(0,Math.min(albums.length-1,Math.round((26-x)/STEP)));x=clamp(26-index*STEP);show(true)}
+function begin(px){drag=true;moved=false;startX=px;startOffset=x;vp.classList.add("dragging");track.style.transition="none"}
+function move(px){if(!drag)return;const d=px-startX;if(Math.abs(d)>6)moved=true;x=clamp(startOffset+d);track.style.transform="translate3d("+x+"px,0,0)"}
+function end(){if(!drag)return;drag=false;vp.classList.remove("dragging");snap()}
+vp.addEventListener("touchstart",e=>{if(e.touches.length===1)begin(e.touches[0].clientX)},{passive:true});
+vp.addEventListener("touchmove",e=>{if(e.touches.length===1)move(e.touches[0].clientX)},{passive:true});
+vp.addEventListener("touchend",end,{passive:true});vp.addEventListener("touchcancel",end,{passive:true});
+vp.addEventListener("mousedown",e=>begin(e.clientX));window.addEventListener("mousemove",e=>move(e.clientX));window.addEventListener("mouseup",end);
+track.addEventListener("click",e=>{const s=e.target.closest(".spine");if(!s||moved)return;index=+s.dataset.i;x=clamp(26-index*STEP);show(true)});
+function tick(){document.getElementById("clock").textContent=new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}
+tick();setInterval(tick,1000);show(false);window.addEventListener("resize",()=>{x=clamp(26-index*STEP);show(false)});
+</script>
+</body>
+</html>
